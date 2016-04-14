@@ -4,17 +4,18 @@
 \alias{plot2D}
 \title{Plot regions of the representative tree in 2D}
 \usage{
-plot2D(ans, type = "alt", data.points = "all", background = "none",
+plot2D(ans, type = "prob", data.points = "all", background = "none",
   group = 1, dim = c(1, 2),
   levels = sort(unique(ans$RepresentativeTree$Levels)), regions = rep(1,
-  length(ans$RepresentativeTree$Levels)), legend = FALSE, main = "default")
+  length(ans$RepresentativeTree$Levels)), legend = FALSE, main = "default",
+  abs = TRUE)
 }
 \arguments{
 \item{ans}{An \code{mrs} object.}
 
 \item{type}{Different options on how to visualize the rectangular regions.
-The options are \code{type = c("eff", "alt", "empty", "none")}.
-Default is \code{type = "alt"}.}
+The options are \code{type = c("eff", "prob", "empty", "none")}.
+Default is \code{type = "prob"}.}
 
 \item{data.points}{Different options on how to plot the data points.
 The options are \code{data.points = c("all", "differential", "none")}.
@@ -38,6 +39,9 @@ The default is to plot all regions.}
 \item{legend}{Color legend for type. Default is \code{legend = FALSE}.}
 
 \item{main}{Overall title for the legend.}
+
+\item{abs}{If \code{TRUE}, plot the absolute value of the effect size.
+Only used when \code{type = "eff"}.}
 }
 \description{
 This function visualizes the regions of the representative tree
@@ -60,7 +64,7 @@ colnames(X) = c(1,2)
 G = c(rep(1, n1), rep(2,n2))
 
 ans = mrs(X, G, K=8)
-plot2D(ans, type = "alt", legend = TRUE)
+plot2D(ans, type = "prob", legend = TRUE)
 
 plot2D(ans, type="empty", data.points = "differential",
  background = "none")

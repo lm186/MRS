@@ -5,8 +5,8 @@
 #' 
 #' @param ans An \code{mrs} object.
 #' @param type Different options on how to visualize the rectangular regions. 
-#' The options are \code{type = c("eff", "alt", "empty", "none")}. 
-#' Default is \code{type = "alt"}.
+#' The options are \code{type = c("eff", "prob", "empty", "none")}. 
+#' Default is \code{type = "prob"}.
 #' @param data.points Different options on how to plot the data points. 
 #'  The options are \code{data.points = c("all", "differential", "none")}. 
 #'  Default is \code{data.points = "all"}. 
@@ -22,6 +22,8 @@
 #'  The default is to plot all regions. 
 #' @param legend Color legend for type. Default is \code{legend = FALSE}.
 #' @param main Overall title for the legend.  
+#' @param abs If \code{TRUE}, plot the absolute value of the effect size. 
+#' Only used when \code{type = "eff"}.
 #' @references Soriano J. and Ma L. (2014). Multi-resolution two-sample comparison 
 #' through the divide-merge Markov tree. \emph{Preprint}. 
 #'  \url{http://arxiv.org/abs/1404.3753}
@@ -43,7 +45,7 @@
 #' G = c(rep(1, n1), rep(2,n2))
 #'   
 #' ans = mrs(X, G, K=8)
-#' plot2D(ans, type = "alt", legend = TRUE)
+#' plot2D(ans, type = "prob", legend = TRUE)
 #'   
 #' plot2D(ans, type="empty", data.points = "differential", 
 #'  background = "none") 
@@ -51,7 +53,7 @@
 #' plot2D(ans, type="none", data.points = "differential", 
 #'  background = "smeared", levels = 4)       
 plot2D = function(  ans, 
-                    type = "alt", 
+                    type = "prob", 
                     data.points = "all", 
                     background = "none", 
                     group = 1, 
@@ -59,8 +61,8 @@ plot2D = function(  ans,
                     levels = sort(unique(ans$RepresentativeTree$Levels)),
                     regions = rep(1,length(ans$RepresentativeTree$Levels)),
                     legend = FALSE,
-                    main = "default"
-                ) 
+                    main = "default",
+                    abs = TRUE ) 
 { 
   if(class(ans)!="mrs")
   {
@@ -120,7 +122,7 @@ plot2D = function(  ans,
   par(mar = c(3.1, 3.1, 3.1, 1.1))
   
   
-  if(type == "alt")
+  if(type == "prob")
   {
     names = round(ans$RepresentativeTree$AltProbs, digits=2)    
     col_range <- colorRampPalette(c("white","darkblue"))(100)
@@ -131,9 +133,18 @@ plot2D = function(  ans,
   }
   else if(type == "eff")
   {
-    names = abs(ans$RepresentativeTree$EffectSizes[,group])
-    col_range <- colorRampPalette(c("white","darkred"))(100)
-    col = col_range[ ceiling( names/max(names + 0.01)*99 + 1) ]
+
+    if (abs == TRUE) {
+      names = abs(ans$RepresentativeTree$EffectSizes[,group])        
+      col_range <- colorRampPalette(c("white","darkred"))(100)
+      col = col_range[ ceiling( names/max(names + 0.01)*99 + 1) ]
+    } else {
+      names = ans$RepresentativeTree$EffectSizes[, group]
+      col_range <- c(colorRampPalette(c("red","white"))(50), 
+                     colorRampPalette(c("white","dodgerblue"))(50))
+      col = col_range[ ceiling(names/max(abs(names)+0.01)*100/2+50) ]     
+    }      
+    
     if(main == "default")
       main = paste("Eff. Size \n Group", group)
   }
@@ -169,7 +180,7 @@ plot2D = function(  ans,
     if( type =="eff")
       nodes = nodes[sort.int( abs(ans$RepresentativeTree$EffectSizes[nodes,group]), 
                               index.return= TRUE )$ix] 
-    else if(type=="alt")
+    else if(type=="prob")
       nodes = nodes[sort.int( ans$RepresentativeTree$AltProbs[nodes], index.return= TRUE )$ix]
     
     for( j in nodes )
@@ -209,7 +220,7 @@ plot2D = function(  ans,
   {
     plot(NA,type="n",ann=FALSE,xlim=c(1,2),ylim=c(1,2),xaxt="n",yaxt="n",bty="n")
     title(main, adj = 0)
-    if( (type == "alt") || (type == "eff") )
+    if( (type == "prob") || (type == "eff") )
     {
       # mtext(main, side = 3, at = 1, cex = 1)
       rect(xleft = 1, 
@@ -220,11 +231,19 @@ plot2D = function(  ans,
       rect(1, 1, 1.2, 2.0)
     }
     
-    if(type == "alt")
+    if(type == "prob")
       mtext( format( round(seq(0,1,by=0.2), digits=1), nsmall=1) ,side=2,at=seq(1,2,by=.2),las=2,cex=1, line=0)
-    if(type == "eff")
-      mtext( format(round(seq( 0, max(names) , length=5), digits=1), nsmall=1),
-             side=2,at=seq(1,2,length=5),las=2,cex=1, line=0)
+    if(type == "eff") {
+      if (abs == TRUE) {
+        mtext( format(round(seq( 0, max(abs(names)) , length=5), digits=1), nsmall=1),
+               side=2,at=seq(1,2,length=5),las=2,cex=1, line=0)        
+      } else {
+        mtext( format(round(seq(-max(abs(names)), max(abs(names)) , length=5), digits=1), nsmall=1),
+               side=2,at=seq(1,2,length=5),las=2,cex=1, line=0)        
+      }
+
+    }
+
     
   }
   par(.pardefault)   

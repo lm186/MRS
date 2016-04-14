@@ -1,4 +1,4 @@
-#' Multi Resolution Scanning for nested design
+#' Multi Resolution Scanning for one-way ANDOVA using the multi-scale Beta-Binomial model
 #'
 #' This function executes the Multi Resolution Scanning algorithm to detect differences 
 #' across the distributions of multiple groups having multiple replicates.
@@ -16,6 +16,7 @@
 #' The three states are \emph{null}, \emph{altenrative} and \emph{prune}, respectively.
 #' @param beta Spatial clustering parameter of the transition probability matrix.
 #' @param gamma Parameter of the transition probability matrix.
+#' @param eta Parameter of the transition probability matrix. Default is \code{eta = 0.3}.
 #' @param alpha Pseudo-counts of the Beta random probability assignments.
 #' @param nu_vec The support of the discrete uniform prior on nu.
 #' @param return_global_null Boolean indicating whether to return the marginal posterior probability of the global null.
@@ -39,7 +40,7 @@
 #' ans = mrs_nested(X, G, H)
 #' ans$PostGlobNull
 #' plot1D(ans)
-mrs_nested <- function(  X, 
+andova <- function(  X, 
                          G, 
                          H,
                          n_groups = length(unique(G)), 
@@ -51,7 +52,7 @@ mrs_nested <- function(  X,
                          gamma = 0.3, 
                          eta = 0.3, 
                          alpha = 0.5,
-                         nu_vec = exp(seq(-1,4)),
+                         nu_vec = 10^(seq(-1,4)),
                          return_global_null = TRUE,
                          return_tree = TRUE )
 {
@@ -132,10 +133,13 @@ mrs_nested <- function(  X,
                          return_global_null, 
                          return_tree )
   
-  ans$RepresentativeTree$EffectSizes = matrix( unlist(ans$RepresentativeTree$EffectSizes), 
-                                               nrow = length(ans$RepresentativeTree$Levels), byrow = TRUE)
-  ans$RepresentativeTree$Regions = matrix( unlist(ans$RepresentativeTree$Regions), 
-                                           nrow = length(ans$RepresentativeTree$Levels), byrow = TRUE)
+  if (return_tree) {
+    ans$RepresentativeTree$EffectSizes = matrix( unlist(ans$RepresentativeTree$EffectSizes), 
+                                                 nrow = length(ans$RepresentativeTree$Levels), byrow = TRUE)
+    ans$RepresentativeTree$Regions = matrix( unlist(ans$RepresentativeTree$Regions), 
+                                             nrow = length(ans$RepresentativeTree$Levels), byrow = TRUE)
+  }
+
   
   colnames(ans$Data$X) = colnames(X)
   

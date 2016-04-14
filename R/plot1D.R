@@ -2,12 +2,12 @@
 #'
 #' This function visualizes the regions of the representative tree 
 #' of the output of the \code{\link{mrs}} function.
-#' For each region the alternative probability or the effect size is plotted.
+#' For each region the posterior probability of difference (PMAP)  or the effect size is plotted.
 #' 
 #' @param ans An \code{mrs} object.
 #' @param type What is represented at each node. 
-#' The options are \code{type = c("eff", "alt")}. 
-#' Default is \code{type = "alt"}.
+#' The options are \code{type = c("eff", "prob")}. 
+#' Default is \code{type = "prob"}.
 #' @param group If \code{type = "eff"}, which group effect size is used. 
 #' Default is \code{group = 1}.
 #' @param dim If the data are multivariate, \code{dim} is the dimension plotted. 
@@ -16,6 +16,8 @@
 #' The default is to plot all regions. 
 #' @param legend Color legend for type. Default is \code{legend = FALSE}.
 #' @param main Overall title for the plot.   
+#' @param abs If \code{TRUE}, plot the absolute value of the effect size. 
+#' Only used when \code{type = "eff"}.
 #' @references Soriano J. and Ma L. (2014). Multi-resolution two-sample comparison 
 #' through the divide-merge Markov tree. \emph{Preprint}. 
 #'  \url{http://arxiv.org/abs/1404.3753}
@@ -37,15 +39,16 @@
 #' G = c(rep(1, n1), rep(2,n2))
 #' 
 #' ans = mrs(X, G, K=10)    
-#' plot1D(ans, type = "alt")    
+#' plot1D(ans, type = "prob")    
 #' plot1D(ans, type = "eff")
 plot1D <- function( ans,
-                    type = "alt",
+                    type = "prob",
                     group = 1,
                     dim = 1,
                     regions = rep(1,length(ans$RepresentativeTree$Levels)),
                     legend = FALSE,
-                    main = "default")
+                    main = "default",
+                    abs = TRUE)
 {
   if(class(ans)!="mrs")
   {
@@ -63,9 +66,9 @@ plot1D <- function( ans,
     layout(1)    
   }
   
-  if(type == "alt")
+  if(type == "prob")
   {
-    names = round(ans$RepresentativeTree$AltProbs[regions==1], digits=2)    
+    names = round(ans$RepresentativeTree$AltProbs[which(regions==1)], digits=2)    
     col_range <- colorRampPalette(c("white","darkblue"))(100)
     col = col_range[ ceiling(names*99+ 1) ]
     if (main == "default")
@@ -73,37 +76,45 @@ plot1D <- function( ans,
   }
   else if(type == "eff")
   {
-    names = abs(ans$RepresentativeTree$EffectSizes[regions==1,group])    
-    #     col_range <- c(colorRampPalette(c("red","white"))(50), 
-    #                    colorRampPalette(c("white","dodgerblue"))(50))
-    #     col = col_range[ ceiling(names/max(abs(names)+0.01)*100/2+50) ]
-    col_range <- colorRampPalette(c("white","darkred"))(100)
-    col = col_range[ ceiling( names/max(names + 0.01)*99 + 1) ]
+  
+   if (abs == TRUE) {
+     names = abs(ans$RepresentativeTree$EffectSizes[which(regions==1),group])        
+     col_range <- colorRampPalette(c("white","darkred"))(100)
+     col = col_range[ ceiling( names/max(names + 0.01)*99 + 1) ]
+   } else {
+     names = ans$RepresentativeTree$EffectSizes[which(regions==1), group]
+     col_range <- c(colorRampPalette(c("red","white"))(50), 
+                    colorRampPalette(c("white","dodgerblue"))(50))
+     col = col_range[ ceiling(names/max(abs(names)+0.01)*100/2+50) ]     
+   }  
+
     if (main == "default")
       main = paste("Effect Size Group", group)
   }
   else 
   {
-    names = rep(1, length(ans$RepresentativeTree$AltProbs[regions==1]))
-    col = rep(NA, length(ans$RepresentativeTree$altProbs[regions==1]))
+    names = rep(1, length(ans$RepresentativeTree$AltProbs[which(regions==1)]))
+    col = rep(NA, length(ans$RepresentativeTree$altProbs[which(regions==1)]))
     if (main == "default")
       main = ""
   }
   
-  max.level = max(ans$RepresentativeTree$Levels[regions==1]) 
+  max.level = max(ans$RepresentativeTree$Levels[which(regions==1)]) 
   plot(1, type="n", yaxt='n', xlab="", ylab="", 
        xlim = ans$Data$Omega[dim,], ylim=c(0,max.level+.75), main = main)
   mtext("level", side=2, line = 2, at= (max.level+.75)/2 )
   axis(2, at= seq(0.4, max.level+0.4),
        labels=seq(max.level, 0, by=-1) )
   
-  for(i in 1:length(ans$RepresentativeTree$Levels[regions==1]))
+  it = 1
+  for (i in which(regions == 1) )
   {
     region = ans$RepresentativeTree$Regions[i,]
     rect(xleft=(region[2*dim-1]) , 
          ybottom= (max.level - ans$RepresentativeTree$Levels[i]) , 
          xright=region[2*dim] , 
-         ytop=(max.level - ans$RepresentativeTree$Levels[i] + .75), col = col[i], border = col[i])
+         ytop=(max.level - ans$RepresentativeTree$Levels[i] + .75), col = col[it], border = col[it])
+    it = it + 1
   }
   
   if(legend)
@@ -115,11 +126,18 @@ plot1D <- function( ans,
          ytop = tail(seq(1,2,1/100),-1), 
          col=col_range, border = col_range )
     rect(1.25, 1, 1.75, 2.0)
-    if(type == "alt")
+    if(type == "prob")
       mtext(formatC(seq(0,1,.1), format = "f", digits = 1),side=2,at=seq(1,2.,by=.1),las=2,cex=1, line=0)
-    if(type == "eff")
-      mtext(round(seq( 0, max(names) , length=11), digits=1),
-            side=2,at=seq(1,2.,by=.1),las=2,cex=1, line=0)
+    if(type == "eff") {
+      if (abs == FALSE) {
+        mtext(formatC(seq( -max(abs(names)), max(abs(names)), length.out=11), format = "f", digits = 1),
+              side=2,at=seq(1,2.,by=.1),las=2,cex=1, line=0)
+      } else {
+        mtext(formatC(seq( 0, max(names), length.out=11), format = "f", digits = 1),
+              side=2,at=seq(1,2.,by=.1),las=2,cex=1, line=0)
+      }
+    }
+
     
   }
   

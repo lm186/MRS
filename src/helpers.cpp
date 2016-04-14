@@ -10,15 +10,16 @@ using namespace std;
 
 
 const double log2pi = std::log(2.0 * M_PI);
+const int one_seq_bin = 2047;   // 11111111111 in binary
 
 double log_exp_x_plus_exp_y(double x, double y) 
 {
   double result;
-  if( ( isinf( fabs(x) ) == true ) && ( isinf( fabs(y) ) == false )  )
+  if( ( std::isinf( fabs(x) ) == 1 ) && ( std::isinf( fabs(y) ) == 0 )  )
     result = y;
-  else if ( ( isinf( fabs(x) ) == false ) && ( isinf( fabs(y) ) == true )  )
+  else if ( ( std::isinf( fabs(x) ) == 0 ) && ( std::isinf( fabs(y) ) == 1 )  )
     result = x;
-  else if ( ( isinf( fabs(x) ) == true ) && ( isinf( fabs(y) ) == true )  )
+  else if ( ( std::isinf( fabs(x) ) == 1 ) && ( std::isinf( fabs(y) ) == 1 )  )
     result = x;
   else if ( x - y >= 100 ) result = x;
   else if ( x - y <= -100 ) result = y;
@@ -31,16 +32,16 @@ double log_exp_x_plus_exp_y(double x, double y)
   return result;
 }
 
-unsigned long long pow2(int k) 
+unsigned long pow2(int k) 
 {
-  unsigned long long res = (unsigned long long) 1 << k;
+  unsigned long res = (unsigned long) 1 << k;
   return res;
 }
 
-uint convert_to_inverse_base_2(double x, int k)
+unsigned int convert_to_inverse_base_2(double x, int k)
 {
-  uint x_base_2 = (uint) floor (x * pow2(k) );
-  uint x_base_inverse_2 = 0;
+  unsigned int x_base_2 = (unsigned int) floor (x * pow2(k) );
+  unsigned int x_base_inverse_2 = 0;
 
   for (int i = 0; i < k; i++) 
   {
@@ -50,10 +51,10 @@ uint convert_to_inverse_base_2(double x, int k)
   return x_base_inverse_2;
 }
 
-unsigned long long int Choose(int n, int k) 
+unsigned long int Choose(int n, int k) 
 {
-    unsigned long long int c = 1;
-    unsigned long long int d = 1;
+    unsigned long int c = 1;
+    unsigned long int d = 1;
     for (int i = 0; i <k; i++) 
     {
         c *= (n-i); d *= (i+1);
@@ -69,11 +70,11 @@ INDEX_TYPE init_index(int level)
     return init;
 }
 
-unsigned long long int get_node_index(INDEX_TYPE& I, int level, int dim)
+unsigned long int get_node_index(INDEX_TYPE& I, int level, int dim)
 {
-  unsigned long long  r = 0;
-  unsigned long long numerator = 1;
-  unsigned long long denominator = 1;
+  unsigned long  r = 0;
+  unsigned long numerator = 1;
+  unsigned long denominator = 1;
   
   for (int i = 0; i < level; i++) 
   {
@@ -84,7 +85,7 @@ unsigned long long int get_node_index(INDEX_TYPE& I, int level, int dim)
     
     r += numerator / denominator;   
   }
-  return dim*(r*pow2(level) + (unsigned long long) I.var[MAXVAR]);
+  return dim*(r*pow2(level) + (unsigned long) I.var[MAXVAR]);
     
 }
 
@@ -92,7 +93,7 @@ unsigned long long int get_node_index(INDEX_TYPE& I, int level, int dim)
 std::pair<bool, INDEX_TYPE> make_parent_index( INDEX_TYPE& I, 
                                           unsigned short part_dim, 
                                           int level, 
-                                          ushort which )
+                                          unsigned short which )
 {
     INDEX_TYPE parent_index = I;
     INDEX_TYPE child_index = I;
@@ -146,11 +147,13 @@ std::pair<bool, INDEX_TYPE> make_parent_index( INDEX_TYPE& I,
       }
       
     
-      if( ( ( parent_index.var[MAXVAR] >> j) & (ushort)1 ) != (ushort)which )
+      if( ( ( parent_index.var[MAXVAR] >> j) & (unsigned short)1 ) != (unsigned short)which )
         parent_exists = false;
-      else
+      else {
         parent_index.var[MAXVAR] = 
-          ( I.var[MAXVAR] & ~((~((ushort)0)) << j ) ) | ((I.var[MAXVAR] >> 1) & ((~((ushort)0)) << j ));
+          ( I.var[MAXVAR] & ~(one_seq_bin << j ) ) | 
+          ((I.var[MAXVAR] >> 1) & (one_seq_bin << j ));            
+      }
           
     }
 
@@ -162,7 +165,7 @@ std::pair<bool, INDEX_TYPE> make_parent_index( INDEX_TYPE& I,
 INDEX_TYPE make_child_index(  INDEX_TYPE& I, 
                               unsigned short part_dim, 
                               int level, 
-                              ushort which) {
+                              unsigned short which) {
     INDEX_TYPE child_index = I;
     unsigned short data = part_dim+1; 
     int i;
@@ -212,7 +215,10 @@ INDEX_TYPE make_child_index(  INDEX_TYPE& I,
     }
     // update the bits of the child
     child_index.var[MAXVAR] = 
-        ((I.var[MAXVAR] << 1) & ((~((ushort)0)) << (j+1) )) | ((ushort) which << j) | ( I.var[MAXVAR] & ~((~((ushort)0)) << j) );
+        ((I.var[MAXVAR] << 1) & (one_seq_bin << (j+1) )) | 
+        ((unsigned short) which << j) | 
+        ( I.var[MAXVAR] & ~(one_seq_bin << j) );
+
     return child_index;
 }
 
@@ -257,8 +263,9 @@ INDEX_TYPE get_next_node(INDEX_TYPE& I, int p, int level)
 
 
 
-double newtonMethod(arma::vec data_0, arma::vec data_1, double nu, double alpha)
+arma::vec newtonMethod(arma::vec data_0, arma::vec data_1, double nu, double alpha)
 {
+  vec output(2);
   int N = data_0.n_elem;
   double theta0 = exp( log(sum(data_0) + alpha) - log( sum(data_0) + sum(data_1) + 2*alpha ) );
   double theta1;
@@ -306,7 +313,9 @@ double newtonMethod(arma::vec data_0, arma::vec data_1, double nu, double alpha)
   if(!foundSol)
      cout << "convergence issue with Newton's method" << endl;
   */
-  return  y + 0.5 * log( 2.0 * M_PI ) - 0.5*log( fabs(ysecond) );
+  output(0) = theta0;
+  output(1) = y + 0.5 * log( 2.0 * M_PI ) - 0.5*log( fabs(ysecond) );
+  return output;
 }
  
 

@@ -6,7 +6,7 @@
 \usage{
 mrs_nested(X, G, H, n_groups = length(unique(G)), n_subgroups = NULL,
   Omega = "default", K = 6, init_state = c(0.8, 0.2, 0), beta = 1,
-  gamma = 0.3, eta = 0.3, alpha = 0.5, nu_vec = exp(seq(-1, 4)),
+  gamma = 0.3, eta = 0.3, alpha = 0.5, nu_vec = 10^(seq(-1, 4)),
   return_global_null = TRUE, return_tree = TRUE)
 }
 \arguments{
@@ -33,6 +33,8 @@ The three states are \emph{null}, \emph{altenrative} and \emph{prune}, respectiv
 
 \item{gamma}{Parameter of the transition probability matrix.}
 
+\item{eta}{Parameter of the transition probability matrix. Default is \code{eta = 0.3}.}
+
 \item{alpha}{Pseudo-counts of the Beta random probability assignments.}
 
 \item{nu_vec}{The support of the discrete uniform prior on nu.}
@@ -50,11 +52,29 @@ across the distributions of multiple groups having multiple replicates.
 }
 \examples{
 set.seed(1)
+<<<<<<< HEAD
 n = 20
 p = 2
 X = matrix(c(runif(p*n/2),rbeta(p*n/2, 1, 4)), nrow=n, byrow=TRUE)
 G = c(rep(1,n/2), rep(2,n/2))
 H = sample(3,2*n, replace = TRUE  )
 ans = mrs_nested(X=X, G=G, H=H)
+=======
+n = 1000
+M = 5
+class_1 = sample(M, n, prob= 1:5, replace=TRUE  )
+class_2 = sample(M, n, prob = 5:1, replace=TRUE )
+
+Y_1 = rnorm(n, mean=class_1, sd = .2)
+Y_2 = rnorm(n, mean=class_2, sd = .2)
+
+X = matrix( c(Y_1, Y_2), ncol = 1)
+G = c(rep(1,n),rep(2,n))
+H = sample(3,2*n, replace = TRUE  )
+
+ans = mrs_nested(X, G, H)
+ans$PostGlobNull
+plot1D(ans)
+>>>>>>> patch-6
 }
 

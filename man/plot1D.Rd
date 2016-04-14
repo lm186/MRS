@@ -4,15 +4,16 @@
 \alias{plot1D}
 \title{Plot regions of the representative tree in 1D}
 \usage{
-plot1D(ans, type = "alt", group = 1, dim = 1, regions = rep(1,
-  length(ans$RepresentativeTree$Levels)), legend = FALSE, main = "default")
+plot1D(ans, type = "prob", group = 1, dim = 1, regions = rep(1,
+  length(ans$RepresentativeTree$Levels)), legend = FALSE, main = "default",
+  abs = TRUE)
 }
 \arguments{
 \item{ans}{An \code{mrs} object.}
 
 \item{type}{What is represented at each node.
-The options are \code{type = c("eff", "alt")}.
-Default is \code{type = "alt"}.}
+The options are \code{type = c("eff", "prob")}.
+Default is \code{type = "prob"}.}
 
 \item{group}{If \code{type = "eff"}, which group effect size is used.
 Default is \code{group = 1}.}
@@ -26,11 +27,14 @@ The default is to plot all regions.}
 \item{legend}{Color legend for type. Default is \code{legend = FALSE}.}
 
 \item{main}{Overall title for the plot.}
+
+\item{abs}{If \code{TRUE}, plot the absolute value of the effect size.
+Only used when \code{type = "eff"}.}
 }
 \description{
 This function visualizes the regions of the representative tree
 of the output of the \code{\link{mrs}} function.
-For each region the alternative probability or the effect size is plotted.
+For each region the posterior probability of difference (PMAP)  or the effect size is plotted.
 }
 \examples{
 set.seed(1)
@@ -49,7 +53,7 @@ X = rbind(X1, X2)
 G = c(rep(1, n1), rep(2,n2))
 
 ans = mrs(X, G, K=10)
-plot1D(ans, type = "alt")
+plot1D(ans, type = "prob")
 plot1D(ans, type = "eff")
 }
 \references{

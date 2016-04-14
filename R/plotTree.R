@@ -1,18 +1,20 @@
 #' Plot nodes of the representative tree 
 #'
 #' This function visualizes the representative tree of the output of the \code{\link{mrs}} function.
-#' For each node of the representative tree, the PMAPs or the effect size is plotted.
+#' For each node of the representative tree, the posterior probability of difference (PMAP) or the effect size is plotted.
 #' Each node in the tree is associated to a region of the sample space. 
 #' All non-terminal nodes have two children nodes obtained by partitiing the parent region with a dyadic cut along a given direction.
 #' The numbers under the vertices represent the cutting direction. 
 #' 
 #' @param ans A \code{mrs} object.
 #' @param type What is represented at each node. 
-#' The options are \code{type = c("eff", "alt")}.
+#' The options are \code{type = c("eff", "prob")}.
 #' @param group If \code{type = "eff"}, which group effect size is used. 
 #' @param legend Color legend for type. Default is \code{legend = FALSE}.
 #' @param main Main title. Default is \code{main = ""}.
 #' @param node.size Size of the nodes. Default is \code{node.size = 5}.
+#' @param abs If \code{TRUE}, plot the absolute value of the effect size. 
+#' Only used when \code{type = "eff"}.
 #' @references Soriano J. and Ma L. (2014). Multi-resolution two-sample comparison 
 #' through the divide-merge Markov tree. \emph{Preprint}. 
 #'  \url{http://arxiv.org/abs/1404.3753}
@@ -35,8 +37,8 @@
 #' G = c(rep(1, n1), rep(2,n2))
 #'   
 #' ans = mrs(X, G, K=8) 
-#' plotTree(ans, type = "alt", legend = TRUE)
-plotTree <- function(ans, type="alt", group = 1, legend = FALSE, main = "", node.size=5)
+#' plotTree(ans, type = "prob", legend = TRUE)
+plotTree <- function(ans, type="prob", group = 1, legend = FALSE, main = "", node.size=5, abs = TRUE)
 {
   if(class(ans)!="mrs")
   {
@@ -53,7 +55,7 @@ plotTree <- function(ans, type="alt", group = 1, legend = FALSE, main = "", node
   {
     layout(1)    
   }
-  if(type == "alt")
+  if(type == "prob")
   {
     box.size = (ans$RepresentativeTree$AltProbs)*node.size + .2*node.size
     name = round(ans$RepresentativeTree$AltProbs, digits=2)    
@@ -63,9 +65,18 @@ plotTree <- function(ans, type="alt", group = 1, legend = FALSE, main = "", node
   else if(type == "eff")
   {
     box.size = abs(ans$RepresentativeTree$EffectSizes[,group])/max(abs(ans$RepresentativeTree$EffectSizes[,group]))*node.size + .2*node.size
-    name = abs(ans$RepresentativeTree$EffectSizes[,group])    
-    col_range <- colorRampPalette(c("white","darkred"))(100)
-    col = col_range[ ceiling( name/max(name + 0.01)*99 + 1) ]
+    
+    if (abs == TRUE) {
+      name = abs(ans$RepresentativeTree$EffectSizes[,group])    
+      col_range <- colorRampPalette(c("white","darkred"))(100)
+      col = col_range[ ceiling( name/max(name + 0.01)*99 + 1) ]
+    } else {
+      name = ans$RepresentativeTree$EffectSizes[, group]
+      col_range <- c(colorRampPalette(c("red","white"))(50), 
+                     colorRampPalette(c("white","dodgerblue"))(50))
+      col = col_range[ ceiling(name/max(abs(name)+0.01)*100/2+50) ]     
+    }
+
   }
   else
   {
@@ -111,14 +122,20 @@ plotTree <- function(ans, type="alt", group = 1, legend = FALSE, main = "", node
          ytop = tail(seq(1,2,1/100),-1), 
          col=col_range, border = col_range )
     rect(1.25, 1, 1.75, 2.0)
-    if(type == "alt")
+    if(type == "prob")
       mtext(formatC(seq(0,1,.1), format = "f", digits = 1),side=2,at=seq(1,2.,by=.1),las=2,cex=1, line=0)
-    if(type == "eff")
-      mtext(round(seq( 0, max(name) , length=11), digits=1),
-            side=2,at=seq(1,2.,by=.1),las=2,cex=1, line=0)    
+    if(type == "eff") {
+      if (abs == TRUE) {
+        mtext(formatC(seq( 0, max(name) , length=11), format = "f", digits = 1),
+              side=2,at=seq(1,2.,by=.1),las=2,cex=1, line=0)    
+      } else {
+        mtext(formatC(seq( -max(abs(name)), max(abs(name)) , length=11), format = "f", digits = 1),
+              side=2,at=seq(1,2.,by=.1),las=2,cex=1, line=0)            
+      }
+    }
+
   }
   
   par(.pardefault)   
-  
   
 }
